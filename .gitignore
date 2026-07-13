@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+
+output/*.png
+output/*.json
+
+dbt/laddplan/target/
+dbt/laddplan/logs/
+
+dbt/laddplan/profiles.yml

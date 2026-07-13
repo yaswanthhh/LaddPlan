@@ -1,0 +1,14 @@
+name: "laddplan"
+version: "1.0.0"
+config-version: 2
+
+profile: "laddplan"
+
+model-paths: ["models"]
+target-path: "target"
+clean-targets: ["target"]
+
+models:
+  laddplan:
+    staging:
+      +materialized: view
