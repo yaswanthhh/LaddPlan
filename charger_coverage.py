@@ -1,4 +1,6 @@
 import networkx as nx
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
 COVERAGE_LIMIT_KM = 30
 EXISTING_CHARGERS = ["Malmo"]
@@ -42,7 +44,7 @@ def get_covered_locations(chargers):
 selected_chargers = EXISTING_CHARGERS.copy()
 current_coverage = get_covered_locations(selected_chargers)
 
-print("LaddRäckvidd - EV Charger Coverage Simulator")
+print("LaddPlan - EV Charger Coverage Simulator")
 print(f"\nExisting chargers: {', '.join(EXISTING_CHARGERS)}")
 print(f"Coverage limit: {COVERAGE_LIMIT_KM} km")
 print(f"New charger budget: {NEW_CHARGER_BUDGET}")
@@ -64,7 +66,6 @@ for round_number in range(1, NEW_CHARGER_BUDGET + 1):
             best_coverage = trial_coverage
 
     if best_location is None:
-        print(f"\nRound {round_number}: No location can improve coverage.")
         break
 
     newly_covered = best_coverage - current_coverage
@@ -78,11 +79,88 @@ for round_number in range(1, NEW_CHARGER_BUDGET + 1):
 
 print("\nFinal charger plan:")
 print(", ".join(selected_chargers))
-
-remaining_uncovered = set(graph.nodes) - current_coverage
 print(f"Final coverage: {len(current_coverage)} / {graph.number_of_nodes()} locations")
 
-if remaining_uncovered:
-    print(f"Still uncovered: {', '.join(sorted(remaining_uncovered))}")
-else:
-    print("All locations are covered!")
+positions = {
+    "Helsingborg": (0, 6),
+    "Landskrona": (0.8, 4.7),
+    "Kavlinge": (2.2, 3.8),
+    "Lomma": (2.0, 2.4),
+    "Lund": (3.2, 2.2),
+    "Eslov": (3.7, 4.0),
+    "Malmo": (1.6, 0.8),
+    "Vellinge": (0.7, 0.0),
+    "Trelleborg": (2.4, -0.3),
+}
+
+new_chargers = [
+    location for location in selected_chargers
+    if location not in EXISTING_CHARGERS
+]
+
+node_colors = []
+for location in graph.nodes:
+    if location in EXISTING_CHARGERS:
+        node_colors.append("#1f77b4")
+    elif location in new_chargers:
+        node_colors.append("#2ca02c")
+    elif location in current_coverage:
+        node_colors.append("#a7d8f0")
+    else:
+        node_colors.append("#e74c3c")
+
+plt.figure(figsize=(11, 8))
+
+nx.draw_networkx_edges(
+    graph,
+    positions,
+    edge_color="#7f8c8d",
+    width=1.8,
+)
+
+nx.draw_networkx_nodes(
+    graph,
+    positions,
+    node_color=node_colors,
+    node_size=1300,
+    edgecolors="#2c3e50",
+    linewidths=1.2,
+)
+
+nx.draw_networkx_labels(
+    graph,
+    positions,
+    font_size=9,
+    font_weight="bold",
+)
+
+edge_labels = nx.get_edge_attributes(graph, "distance_km")
+edge_labels = {edge: f"{distance} km" for edge, distance in edge_labels.items()}
+
+nx.draw_networkx_edge_labels(
+    graph,
+    positions,
+    edge_labels=edge_labels,
+    font_size=8,
+)
+
+legend_items = [
+    Patch(facecolor="#1f77b4", edgecolor="#2c3e50", label="Existing charger"),
+    Patch(facecolor="#2ca02c", edgecolor="#2c3e50", label="Recommended charger"),
+    Patch(facecolor="#a7d8f0", edgecolor="#2c3e50", label="Covered location"),
+    Patch(facecolor="#e74c3c", edgecolor="#2c3e50", label="Uncovered location"),
+]
+
+plt.legend(handles=legend_items, loc="upper right")
+plt.title(
+    "LaddPlan: EV Charger Coverage Plan\n"
+    f"Coverage: {len(current_coverage)} / {graph.number_of_nodes()} locations",
+    fontsize=15,
+    fontweight="bold",
+)
+plt.axis("off")
+plt.tight_layout()
+plt.savefig("output/laddplan_coverage.png", dpi=200, bbox_inches="tight")
+plt.show()
+
+print("\nMap saved to: output/laddplan_coverage.png")
