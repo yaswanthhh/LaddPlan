@@ -1,0 +1,13 @@
+start,end,distance_km
+Malmo,Lund,18
+Malmo,Trelleborg,32
+Malmo,Vellinge,15
+Vellinge,Trelleborg,20
+Lund,Eslov,20
+Lund,Lomma,14
+Lomma,Malmo,13
+Lomma,Landskrona,27
+Eslov,Helsingborg,47
+Landskrona,Helsingborg,26
+Landskrona,Kavlinge,18
+Kavlinge,Lund,22

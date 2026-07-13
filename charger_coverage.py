@@ -1,30 +1,67 @@
+import csv
+import json
+import psycopg
+
 import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
-COVERAGE_LIMIT_KM = 30
-EXISTING_CHARGERS = ["Malmo"]
-NEW_CHARGER_BUDGET = 3
+DATABASE_CONFIG = {
+    "host": "localhost",
+    "port": 5433,
+    "dbname": "laddplan",
+    "user": "laddplan_user",
+    "password": "laddplan_password",
+}
 
-graph = nx.Graph()
+def load_config():
+    with open("config.json", encoding="utf-8") as file:
+        return json.load(file)
 
-roads = [
-    ("Malmo", "Lund", 18),
-    ("Malmo", "Trelleborg", 32),
-    ("Malmo", "Vellinge", 15),
-    ("Vellinge", "Trelleborg", 20),
-    ("Lund", "Eslov", 20),
-    ("Lund", "Lomma", 14),
-    ("Lomma", "Malmo", 13),
-    ("Lomma", "Landskrona", 27),
-    ("Eslov", "Helsingborg", 47),
-    ("Landskrona", "Helsingborg", 26),
-    ("Landskrona", "Kavlinge", 18),
-    ("Kavlinge", "Lund", 22),
-]
+def load_network_from_database():
+    graph = nx.Graph()
+    positions = {}
 
-for start, end, distance in roads:
-    graph.add_edge(start, end, distance_km=distance)
+    with psycopg.connect(**DATABASE_CONFIG) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    start_location,
+                    end_location,
+                    distance_km
+                FROM raw.roads
+                ORDER BY road_id
+                """
+            )
+
+            for start, end, distance in cursor.fetchall():
+                graph.add_edge(
+                    start,
+                    end,
+                    distance_km=float(distance),
+                )
+
+            cursor.execute(
+                """
+                SELECT
+                    location_name,
+                    x_coordinate,
+                    y_coordinate
+                FROM raw.locations
+                ORDER BY location_name
+                """
+            )
+
+            for location, x_coordinate, y_coordinate in cursor.fetchall():
+                positions[location] = (
+                    float(x_coordinate),
+                    float(y_coordinate),
+                )
+
+    return graph, positions
+
+graph, positions = load_network_from_database()
 
 
 def get_covered_locations(chargers):
@@ -40,6 +77,53 @@ def get_covered_locations(chargers):
         if distance <= COVERAGE_LIMIT_KM
     }
 
+def load_positions():
+    positions = {}
+
+    with open("data/locations.csv", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+
+        for row in reader:
+            positions[row["location"]] = (
+                float(row["x"]),
+                float(row["y"]),
+            )
+
+    return positions
+
+def save_recommendations(
+    existing_chargers,
+    recommended_chargers,
+    coverage_limit_km,
+    total_locations,
+    covered_locations,
+):
+    result = {
+        "app_name": "LaddPlan",
+        "coverage_limit_km": coverage_limit_km,
+        "existing_chargers": existing_chargers,
+        "recommended_chargers": recommended_chargers,
+        "total_locations": total_locations,
+        "covered_locations": len(covered_locations),
+        "uncovered_locations": sorted(
+            set(graph.nodes) - covered_locations
+        ),
+    }
+
+    with open(
+        "output/recommendations.json",
+        "w",
+        encoding="utf-8",
+    ) as file:
+        json.dump(result, file, indent=2)
+
+    return result
+
+config = load_config()
+
+COVERAGE_LIMIT_KM = config["coverage_limit_km"]
+EXISTING_CHARGERS = config["existing_chargers"]
+NEW_CHARGER_BUDGET = config["new_charger_budget"]
 
 selected_chargers = EXISTING_CHARGERS.copy()
 current_coverage = get_covered_locations(selected_chargers)
@@ -80,18 +164,6 @@ for round_number in range(1, NEW_CHARGER_BUDGET + 1):
 print("\nFinal charger plan:")
 print(", ".join(selected_chargers))
 print(f"Final coverage: {len(current_coverage)} / {graph.number_of_nodes()} locations")
-
-positions = {
-    "Helsingborg": (0, 6),
-    "Landskrona": (0.8, 4.7),
-    "Kavlinge": (2.2, 3.8),
-    "Lomma": (2.0, 2.4),
-    "Lund": (3.2, 2.2),
-    "Eslov": (3.7, 4.0),
-    "Malmo": (1.6, 0.8),
-    "Vellinge": (0.7, 0.0),
-    "Trelleborg": (2.4, -0.3),
-}
 
 new_chargers = [
     location for location in selected_chargers
@@ -164,3 +236,19 @@ plt.savefig("output/laddplan_coverage.png", dpi=200, bbox_inches="tight")
 plt.show()
 
 print("\nMap saved to: output/laddplan_coverage.png")
+recommended_chargers = [
+    location
+    for location in selected_chargers
+    if location not in EXISTING_CHARGERS
+]
+
+save_recommendations(
+    existing_chargers=EXISTING_CHARGERS,
+    recommended_chargers=recommended_chargers,
+    coverage_limit_km=COVERAGE_LIMIT_KM,
+    total_locations=graph.number_of_nodes(),
+    covered_locations=current_coverage,
+)
+
+print("Recommendations saved to: output/recommendations.json")
+print(f"Final coverage: {len(current_coverage)} / {graph.number_of_nodes()} locations")
