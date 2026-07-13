@@ -250,5 +250,61 @@ save_recommendations(
     covered_locations=current_coverage,
 )
 
+def save_run_to_database(
+    existing_chargers,
+    recommended_chargers,
+    coverage_limit_km,
+    total_locations,
+    covered_locations,
+):
+    with psycopg.connect(**DATABASE_CONFIG) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO analytics.recommendation_runs (
+                    app_name,
+                    coverage_limit_km,
+                    total_locations,
+                    covered_locations
+                )
+                VALUES (%s, %s, %s, %s)
+                RETURNING run_id
+                """,
+                (
+                    "LaddPlan",
+                    coverage_limit_km,
+                    total_locations,
+                    len(covered_locations),
+                ),
+            )
+
+            run_id = cursor.fetchone()[0]
+
+            for order, location in enumerate(
+                recommended_chargers,
+                start=1,
+            ):
+                cursor.execute(
+                    """
+                    INSERT INTO analytics.recommended_chargers (
+                        run_id,
+                        location_name,
+                        recommendation_order
+                    )
+                    VALUES (%s, %s, %s)
+                    """,
+                    (run_id, location, order),
+                )
+
+    return run_id
+
+run_id = save_run_to_database(
+    existing_chargers=EXISTING_CHARGERS,
+    recommended_chargers=recommended_chargers,
+    coverage_limit_km=COVERAGE_LIMIT_KM,
+    total_locations=graph.number_of_nodes(),
+    covered_locations=current_coverage,
+)
+
+print(f"Recommendation run saved to Postgres with run_id: {run_id}")
 print("Recommendations saved to: output/recommendations.json")
-print(f"Final coverage: {len(current_coverage)} / {graph.number_of_nodes()} locations")
