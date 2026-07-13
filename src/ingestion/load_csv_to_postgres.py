@@ -1,16 +1,17 @@
 import csv
-from pathlib import Path
-
 import psycopg
+import os
+
+from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 DATABASE_CONFIG = {
-    "host": "localhost",
-    "port": 5433,
-    "dbname": "laddplan",
-    "user": "laddplan_user",
-    "password": "laddplan_password",
+    "host": os.getenv("LADDPLAN_DB_HOST", "localhost"),
+    "port": int(os.getenv("LADDPLAN_DB_PORT", "5433")),
+    "dbname": os.getenv("LADDPLAN_DB_NAME", "laddplan"),
+    "user": os.getenv("LADDPLAN_DB_USER", "laddplan_user"),
+    "password": os.getenv("LADDPLAN_DB_PASSWORD", "laddplan_password"),
 }
 
 

@@ -1,17 +1,20 @@
 import csv
 import json
 import psycopg
+import matplotlib
+import os
 
 import networkx as nx
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
 DATABASE_CONFIG = {
-    "host": "localhost",
-    "port": 5433,
-    "dbname": "laddplan",
-    "user": "laddplan_user",
-    "password": "laddplan_password",
+    "host": os.getenv("LADDPLAN_DB_HOST", "localhost"),
+    "port": int(os.getenv("LADDPLAN_DB_PORT", "5433")),
+    "dbname": os.getenv("LADDPLAN_DB_NAME", "laddplan"),
+    "user": os.getenv("LADDPLAN_DB_USER", "laddplan_user"),
+    "password": os.getenv("LADDPLAN_DB_PASSWORD", "laddplan_password"),
 }
 
 def load_config():
@@ -30,7 +33,7 @@ def load_network_from_database():
                     start_location,
                     end_location,
                     distance_km
-                FROM raw.roads
+                FROM analytics.fct_roads
                 ORDER BY road_id
                 """
             )
@@ -48,7 +51,7 @@ def load_network_from_database():
                     location_name,
                     x_coordinate,
                     y_coordinate
-                FROM raw.locations
+                FROM analytics.dim_locations
                 ORDER BY location_name
                 """
             )
@@ -233,7 +236,6 @@ plt.title(
 plt.axis("off")
 plt.tight_layout()
 plt.savefig("output/laddplan_coverage.png", dpi=200, bbox_inches="tight")
-plt.show()
 
 print("\nMap saved to: output/laddplan_coverage.png")
 recommended_chargers = [

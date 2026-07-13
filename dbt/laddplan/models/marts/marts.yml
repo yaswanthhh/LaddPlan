@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: dim_locations
+    description: Clean location dimension used as candidate EV charger sites.
+
+    columns:
+      - name: location_id
+        tests:
+          - unique
+          - not_null
+
+      - name: location_name
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_roads
+    description: Clean weighted road connections used by the charger coverage algorithm.
+
+    columns:
+      - name: road_id
+        tests:
+          - unique
+          - not_null
+
+      - name: start_location
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_name
+
+      - name: end_location
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_name
+
+      - name: distance_km
+        tests:
+          - not_null
