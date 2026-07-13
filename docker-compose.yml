@@ -17,5 +17,81 @@ services:
       timeout: 5s
       retries: 10
 
+  airflow-webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: laddplan-airflow-webserver
+    command: webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://laddplan_user:laddplan_password@postgres:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+      LADDPLAN_DB_HOST: postgres
+      LADDPLAN_DB_PORT: 5432
+      LADDPLAN_DB_NAME: laddplan
+      LADDPLAN_DB_USER: laddplan_user
+      LADDPLAN_DB_PASSWORD: laddplan_password
+      MPLBACKEND: Agg
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./:/opt/airflow/laddplan
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  airflow-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: laddplan-airflow-scheduler
+    command: scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://laddplan_user:laddplan_password@postgres:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      LADDPLAN_DB_HOST: postgres
+      LADDPLAN_DB_PORT: 5432
+      LADDPLAN_DB_NAME: laddplan
+      LADDPLAN_DB_USER: laddplan_user
+      LADDPLAN_DB_PASSWORD: laddplan_password
+      MPLBACKEND: Agg
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./:/opt/airflow/laddplan
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  airflow-init:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: laddplan-airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate &&
+        airflow users create \
+          --username admin \
+          --password admin \
+          --firstname LaddPlan \
+          --lastname Admin \
+          --role Admin \
+          --email admin@laddplan.local
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://laddplan_user:laddplan_password@postgres:5432/airflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   laddplan_postgres_data:
