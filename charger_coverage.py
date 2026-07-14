@@ -3,6 +3,7 @@ import json
 import psycopg
 import matplotlib
 import os
+import argparse
 
 import networkx as nx
 matplotlib.use("Agg")
@@ -17,8 +18,8 @@ DATABASE_CONFIG = {
     "password": os.getenv("LADDPLAN_DB_PASSWORD", "laddplan_password"),
 }
 
-def load_config():
-    with open("config.json", encoding="utf-8") as file:
+def load_config(config_path):
+    with open(config_path, encoding="utf-8") as file:
         return json.load(file)
 
 def load_network_from_database():
@@ -122,7 +123,19 @@ def save_recommendations(
 
     return result
 
-config = load_config()
+parser = argparse.ArgumentParser(
+    description="Run a LaddPlan charger-coverage scenario."
+)
+
+parser.add_argument(
+    "--config",
+    default="config.json",
+    help="Path to the scenario configuration JSON file.",
+)
+
+args = parser.parse_args()
+
+config = load_config(args.config)   
 
 COVERAGE_LIMIT_KM = config["coverage_limit_km"]
 EXISTING_CHARGERS = config["existing_chargers"]
