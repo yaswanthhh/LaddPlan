@@ -74,7 +74,7 @@ python charger_coverage.py --config data\scenarios\baseline.json
 
 ## Scenario outputs
 
-Each scenario produces separate output files, so results are not overwritten.
+Each scenario produces different outputs, so the file names were changed to ensure they don't get overwritten.
 
 | Scenario | Coverage map | Recommendation output |
 |---|---|---|
