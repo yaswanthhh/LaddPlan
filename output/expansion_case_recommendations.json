@@ -1,0 +1,13 @@
+{
+  "app_name": "LaddPlan",
+  "coverage_limit_km": 40,
+  "existing_chargers": [
+    "Malmo"
+  ],
+  "recommended_chargers": [
+    "Landskrona"
+  ],
+  "total_locations": 9,
+  "covered_locations": 9,
+  "uncovered_locations": []
+}
