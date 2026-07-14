@@ -1,0 +1,7 @@
+{
+    "coverage_limit_km": 30,
+    "existing_chargers": [
+        "Malmo"
+    ],
+    "new_charger_budget": 2
+}

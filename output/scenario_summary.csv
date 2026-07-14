@@ -1,0 +1,6 @@
+scenario,coverage_limit_km,existing_chargers,recommended_chargers,total_locations,covered_locations,uncovered_locations,coverage_percent
+baseline,30,Malmo,"Landskrona, Lund, Trelleborg",9,9,None,100.0
+expansion_case,40,Malmo,Landskrona,9,9,None,100.0
+limited_budget,30,Malmo,"Landskrona, Lund",9,8,Trelleborg,88.9
+short_range,20,Malmo,"Landskrona, Lund, Trelleborg",9,8,Helsingborg,88.9
+strong_existing_network,30,"Malmo, Helsingborg","Lund, Trelleborg",9,9,None,100.0
