@@ -316,11 +316,11 @@ Example recommendation output:
 
 ```json
 {
-  "app_name": "LaddPlan",
+  "app_name": "Charging Plan",
   "coverage_limit_km": 30,
   "existing_chargers": ["Malmo"],
   "recommended_chargers": [
-    "Landskrona",
+    "Country Crown",
     "Lund",
     "Trelleborg"
   ],
@@ -349,4 +349,4 @@ Example recommendation output:
 
 ## Author
 
-Built by Yaswanth as a portfolio project demonstrating end-to-end data engineering, analytics engineering, workflow orchestration, and graph-based optimisation.
+Built by Yaswanth Udayakumar
